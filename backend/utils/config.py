@@ -41,7 +41,7 @@ def get_embeddings_with_fallback():
     if google_api_key:
         try:
             primary_embeddings = GoogleGenerativeAIEmbeddings(
-                model="models/embedding-001",
+                model="gemini-embedding-001",
                 google_api_key=google_api_key,
             )
             # Smoke test

@@ -25,19 +25,44 @@ def build_vectorstore():
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)
 
+    # If no internship docs exist, avoid building an empty index
+    if not split_docs:
+        print("⚠️ No internships found to index; skipping vector store build.")
+        return None
+
     # Ensure directory exists
     os.makedirs(VECTORSTORE_PATH, exist_ok=True)
-    vectorstore = FAISS.from_documents(split_docs, embeddings)
-    vectorstore.save_local(VECTORSTORE_PATH)  # ✅ Save using FAISS
-    print("✅ Vector store built/updated")
+
+    # Build and persist the vectorstore
+    try:
+        vectorstore = FAISS.from_documents(split_docs, embeddings)
+        vectorstore.save_local(VECTORSTORE_PATH)  # ✅ Save using FAISS
+        print("✅ Vector store built/updated")
+        return vectorstore
+    except Exception as e:
+        print(f"⚠️ Failed to build vectorstore: {e}")
+        return None
 
 def load_vectorstore():
+    """Load an existing FAISS vectorstore or build it if missing.
+
+    Returns:
+        FAISS object or None if loading/building fails.
+    """
     # Check if the directory exists and contains the required FAISS index files
     index_file = os.path.join(VECTORSTORE_PATH, "index.faiss")
     if not os.path.exists(VECTORSTORE_PATH) or not os.path.exists(index_file):
         print("FAISS index not found, building vectorstore...")
-        build_vectorstore()
-    return FAISS.load_local(VECTORSTORE_PATH, embeddings, allow_dangerous_deserialization=True)  # ✅ Load using FAISS
+        built = build_vectorstore()
+        if not built:
+            print("⚠️ Vectorstore build failed or produced no index. Returning None.")
+            return None
+
+    try:
+        return FAISS.load_local(VECTORSTORE_PATH, embeddings, allow_dangerous_deserialization=True)  # ✅ Load using FAISS
+    except Exception as e:
+        print(f"⚠️ Failed to load vectorstore: {e}")
+        return None
 
 
 

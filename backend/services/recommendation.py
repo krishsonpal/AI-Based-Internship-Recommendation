@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ✅ Use gemini-1.5-flash instead of pro (fewer quota errors)
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.3)
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.3)
 
 # Fallback model (runs locally via Ollama)
 fallback_llm = ChatOllama(model="llama3")
@@ -109,6 +109,11 @@ def get_internship_recommendations(student_summary: str, top_k: int = 5):
     from db.models import Internship
     
     vectorstore = load_vectorstore()
+    if not vectorstore:
+        # If the vectorstore cannot be built/loaded (e.g., no internships), return empty recommendations
+        print("⚠️ No vectorstore available for recommendations; returning empty list.")
+        return []
+
     results = vectorstore.similarity_search(student_summary, k=top_k)
 
     # Get job IDs from vectorstore results
@@ -151,7 +156,11 @@ def get_internship_recommendations_by_vector(query_embedding: list, top_k: int =
     from db.models import Internship
     
     vectorstore = load_vectorstore()
-    
+    if not vectorstore:
+        # Without a vectorstore we can't perform VSM; return no recommendations.
+        print("⚠️ No vectorstore available for similarity search; returning empty list.")
+        return []
+
     try:
         results = vectorstore.similarity_search_by_vector(query_embedding, k=top_k)
     except AssertionError as e:

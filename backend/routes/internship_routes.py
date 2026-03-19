@@ -31,7 +31,7 @@ async def company_signup(company_data: CompanySignup, db: Session = Depends(get_
     )
     
     return CompanyResponse(
-        company_id=company.company_id,
+        company_id=company.company_id, #type:ignore
         email=company.email,
         company_name=company.company_name
     )
